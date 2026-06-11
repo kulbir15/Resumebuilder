@@ -15,6 +15,8 @@ import {
     DownloadIcon
 } from 'lucide-react'
 
+import emailjs from "@emailjs/browser"
+
 import PersonalInfoForm from '../components/PersonalInfoForm'
 import ProfessionalSummaryForm from '../components/ProfessionalSummaryForm'
 import ExperienceForm from '../components/ExperienceForm'
@@ -124,10 +126,6 @@ const ResumeBuilder = () => {
                 updatedResumeData.personal_info = {}
             }
 
-            if (typeof updatedResumeData.personal_info.image === 'object') {
-                delete updatedResumeData.personal_info.image
-            }
-
             const formData = new FormData()
             formData.append("resumeId", resumeId)
             formData.append("resumeData", JSON.stringify(updatedResumeData))
@@ -160,10 +158,7 @@ const ResumeBuilder = () => {
         const url = `${window.location.origin}/view/${resumeId}`
 
         if (navigator.share) {
-            navigator.share({
-                url,
-                text: "My Resume"
-            })
+            navigator.share({ url, text: "My Resume" })
         } else {
             navigator.clipboard.writeText(url)
             toast.success("Link copied")
@@ -172,6 +167,27 @@ const ResumeBuilder = () => {
 
     const downloadResume = () => {
         window.print()
+    }
+
+    /* ✅ EMAILJS FUNCTION */
+    const sendEmail = async () => {
+        try {
+            await emailjs.send(
+                import.meta.env.VITE_EMAILJS_SERVICE_ID,
+                import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+                {
+                    name: resumeData.personal_info?.fullName || "User",
+                    email: resumeData.personal_info?.email || "",
+                    message: "Your resume has been created/updated successfully!"
+                },
+                import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+            )
+
+            toast.success("Email sent successfully!")
+        } catch (error) {
+            console.error(error)
+            toast.error("Email failed")
+        }
     }
 
     const ActiveIcon = activeSection.icon
@@ -188,7 +204,6 @@ const ResumeBuilder = () => {
                 {/* LEFT */}
                 <div className="lg:col-span-5">
 
-                    {/* SECTION NAV */}
                     <div className="flex flex-wrap gap-2 mb-4">
                         {sections.map((s, i) => {
                             const Icon = s.icon
@@ -231,7 +246,6 @@ const ResumeBuilder = () => {
                         </h2>
 
                         <div className="mt-4">
-
                             {activeSection.id === "personal" && (
                                 <PersonalInfoForm
                                     data={resumeData.personal_info}
@@ -249,7 +263,6 @@ const ResumeBuilder = () => {
                                     onChange={(d) =>
                                         setResumeData(p => ({ ...p, professional_summary: d }))
                                     }
-                                    setResumeData={setResumeData}
                                 />
                             )}
 
@@ -288,7 +301,6 @@ const ResumeBuilder = () => {
                                     }
                                 />
                             )}
-
                         </div>
 
                         <button
@@ -304,6 +316,14 @@ const ResumeBuilder = () => {
                             Save Changes
                         </button>
 
+                        {/* ✅ EMAIL BUTTON */}
+                        <button
+                            onClick={sendEmail}
+                            className="mt-3 px-4 py-2 bg-blue-200 rounded w-full"
+                        >
+                            Send Email
+                        </button>
+
                     </div>
                 </div>
 
@@ -314,25 +334,16 @@ const ResumeBuilder = () => {
 
                     <div className="flex gap-3 mt-2">
 
-                        <button
-                            onClick={changeResumeVisibility}
-                            className="flex items-center gap-1"
-                        >
+                        <button onClick={changeResumeVisibility}>
                             {resumeData.public ? <EyeIcon /> : <EyeOffIcon />}
                             {resumeData.public ? "Public" : "Private"}
                         </button>
 
-                        <button
-                            onClick={handleShare}
-                            className="flex items-center gap-1"
-                        >
+                        <button onClick={handleShare}>
                             <Share2Icon className="size-4" /> Share
                         </button>
 
-                        <button
-                            onClick={downloadResume}
-                            className="flex items-center gap-1"
-                        >
+                        <button onClick={downloadResume}>
                             <DownloadIcon className="size-4" /> Download
                         </button>
 
@@ -343,7 +354,6 @@ const ResumeBuilder = () => {
                         template={resumeData.template}
                         accentColor={resumeData.accent_color}
                     />
-
                 </div>
 
             </div>
